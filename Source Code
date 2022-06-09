@@ -1,77 +1,90 @@
-#include <SoftwareSerial.h>                                   
+/* Wifi Part*/
+
+#include <SoftwareSerial.h>                                 
                                           
 
-String agAdi = "AGIR_WIFI";                   
-String agSifresi = "*******";           
+String agAdi = "BOYDAS-AGIR Wifi";                  
+String agSifresi = "********";           
 
-int rxPin = A3;                                              
-int txPin = A5;                                             
-
-
-String ip = "184.106.153.149";                              
+int rxPin = A3;                                               
+int txPin = A5;                                               
 
 
+String ip = "184.106.153.149";                                
 
 
-SoftwareSerial esp(rxPin, txPin);        
+
+SoftwareSerial esp(rxPin, txPin);  
 
 /* 1 - DC Voltage Measurement */
 
-    int analogInputPin = A2;                   
+    int analogInputPin = A2;  
+  
     float vArduino = 0.0;
     float Voltage = 0.0;
     float Current = 0.0;
     float Power = 0.0;
     float wattHour = 0.0;
     float Energy = 0.0;
-    float R1 = 41500.0;                       
-    float R2 = 2500.0;                         
-    int rawValueRead= 0;                       
-                   
+    float R1 = 41500.0;                         
+    float R2 = 2500.0;
+    float AcsValue=0.0,Samples=0.0,AvgAcs=0.0,AcsValueF=0.0;  
+    int rawValueRead= 0;                        
 /* 2.1- DC Current Offset */
         
-              int OffsetRead = 0;                  
-              float currentOffset =0.00 ;        
-                                                    
-                                                    
-                                                   
-              float offsetLastSample = 0;           
-              float offsetSampleCount = 0;         
+              int OffsetRead = 0;                   
+              float currentOffset =0.00 ;           
+              float offsetLastSample = 0;          
+              float offsetSampleCount = 0;          
 /* 5 - LCD Display  */
 
-    #include<LiquidCrystal.h>                   
+    #include<LiquidCrystal.h>                  
     LiquidCrystal LCD(8,9,4,5,6,7);             
-    unsigned long startMillisLCD;             
-    unsigned long currentMillisLCD;            
-    const unsigned long periodLCD = 1000;      
+    unsigned long startMillisLCD;               
+    unsigned long currentMillisLCD;             
+    const unsigned long periodLCD = 1000;       
 
 /* 2 - Data Logger shield */
     
-    #include<Wire.h>                         
+    #include<Wire.h>                            
     #include "RTClib.h"                        
-    #include<SPI.h>                             
+    #include<SPI.h>                            
     #include<SD.h>                              
     
-    RTC_DS1307 RTC;                             
-    DateTime now;                               
+    RTC_DS1307 RTC;                            
+    DateTime now;                              
     
-    int chipSelect = 10;                        
+    int chipSelect = 10;                       
     
-    File mySensorData;                          
-    unsigned long startMillisSD;              
-    unsigned long currentMillisSD;           
-    const unsigned long periodSD = 5000;        
+    File mySensorData;                       
+    unsigned long startMillisSD;                
+    unsigned long currentMillisSD;             
+    const unsigned long periodSD = 5000;       
 
-void setup()                                  
+void setup()                               
  
   {
+
+/*  General */
+
+    Serial.begin(9600);                       
+       /* 1 - DC Voltage Measurement */
     
-    
-    
-    
-    Serial.begin(9600);  
+    pinMode(analogInputPin, INPUT);            
+    Serial.begin(9600);                       
+      
+
+/*   LCD Display  */
+
+    LCD.begin(16,2);                                
+    LCD.setCursor(0,0);                             
+    startMillisLCD = millis();
+  
+  /*ESP 8266*/
+  
+  Serial.begin(9600); 
   Serial.println("Started");
-  esp.begin(115200);                                        
+  esp.begin(115200);                                         
   esp.println("AT");                                          
   Serial.println("AT Yollandı");
   while(!esp.find("OK")){                                    
@@ -86,35 +99,27 @@ void setup()
   }
   Serial.println("Client olarak ayarlandı");
   Serial.println("Aga Baglaniliyor...");
-  esp.println("AT+CWJAP=\""+agAdi+"\",\""+agSifresi+"\"");    
-  while(!esp.find("OK"));                                     
+  esp.println("AT+CWJAP=\""+agAdi+"\",\""+agSifresi+"\"");   
+  while(!esp.find("OK"));                                    
   Serial.println("Aga Baglandi.");
   delay(1000);
 
-/* 0- General */
-
-    Serial.begin(9600);                      
-       
+     
+    /* 1 - DC Voltage Measurement */
     
-    pinMode(analogInputPin, INPUT);             
+    pinMode(analogInputPin, INPUT);            
     Serial.begin(9600);                         
-    Serial.println("Sonar Panel Monitoring");   
-
-/* 5 - LCD Display  */
-
-    LCD.begin(16,2);                                  
-    LCD.setCursor(0,0);                             
-    startMillisLCD = millis();
+    Serial.println("Sonar Panel Monitoring"); 
   
-    /* 2 - Data Logger shield */
+    /*Data Logger shield */
       
-      pinMode(chipSelect,OUTPUT);                       
-      RTC.begin();                                     
-      Wire.begin();                                    
-      SD.begin(chipSelect);                           
-      startMillisSD = millis();                         
-      RTC.adjust(DateTime(F(_DATE), F(TIME_)));  
-                                                       
+      pinMode(chipSelect,OUTPUT);                     
+      RTC.begin();                                   
+      Wire.begin();                                     
+      SD.begin(chipSelect);                             
+      startMillisSD = millis();                        
+      RTC.adjust(DateTime(F(__DATE__), F(__TIME__)));   
+                                                        
       if(! RTC.isrunning())                             
       {
         Serial.println("RTC is not running !");
@@ -122,61 +127,78 @@ void setup()
   }
 
   
-void loop()                                
+void loop()                              
 
   {
 
-        /* 0- General */
+        /* 0-LCD Setting */
 
 
-             
+              /* 0.1- Button Function */
         
               int buttonRead;
-              buttonRead = analogRead (0);                                         
+              buttonRead = analogRead (0);                                        
 
-            
+              /*Right button is pressed */
               if (buttonRead < 60) 
               {   LCD.setCursor(0,0); LCD.print ("PRESS <SELECT>   "); }       
      
-              
+              /* Up button is pressed */
               else if (buttonRead < 200) 
               {   LCD.setCursor(0,0); LCD.print ("PRESS <SELECT>   "); }    
                  
-             
+              /* Down button is pressed */
               else if (buttonRead < 400)
               {   LCD.setCursor(0,0); LCD.print ("PRESS <SELECT>  ");  }      
      
-              
+              /* Left button is pressed */
               else if (buttonRead < 600)
               {   LCD.setCursor(0,0); LCD.print ("PRESS <SELECT>   "); } 
      
-             
+              /* Select button is pressed */
               else if (buttonRead < 800)
               {   
-              OffsetRead = 1;                                                 
+              OffsetRead = 1;                                               
               LCD.setCursor(0,0);
               LCD.print ("INITIALIZING..... ");
               LCD.setCursor(0,1);
               LCD.print ("WAIT 5 SEC ..... ");
               }
 
-    
-rawValueRead = analogRead(analogInputPin);       
-    vArduino = (rawValueRead * 5.0) / 1024.0;         
-    Voltage = vArduino / (R2/(R1+R2));                
-    Current= Voltage/R2;
+    /* 1 - DC Current Measurement */
+  
+
+unsigned int x=0;
+
+  for (int x = 0; x < 150; x++){ 
+  AcsValue = analogRead(A0);       
+  Samples = Samples + AcsValue;  
+  delay (3); 
+}
+AvgAcs=Samples/150.0;
+
+
+AcsValueF = (((2.5 - (AvgAcs * (5.0 / 1024.0)) )/0.066)-0.09);
+
+  
+  /* 2 - DC Values Measurement */
+rawValueRead = analogRead(analogInputPin);        
+    vArduino = (rawValueRead * 5.0) / 1024.0;       
+    Voltage = vArduino / (R2/(R1+R2));               
+    Current = AcsValueF;
     Power = Voltage*Current;
     wattHour = Power/3600;
     Energy = Energy + wattHour;
-   
-   //WİFİ ALANI BURASI
-   
-esp.println("AT+CIPSTART=\"TCP\",\""+ip+"\",80");          
-  if(esp.find("Error")){                                     
+  
+  
+/* 3 - Wifi Module Data Transfer */
+
+ esp.println("AT+CIPSTART=\"TCP\",\""+ip+"\",80");          
+  if(esp.find("Error")){                                      
     Serial.println("AT+CIPSTART Error");
   }
  
-  String veri = "GET https://api.thingspeak.com/update?api_key=NU07P1QXPHKHX2P1";                                  
+  String veri = "GET https://api.thingspeak.com/update?api_key=NU07P1QXPHKHX2P1";                                      
   veri += "&field1=";
   veri += String(Voltage);
   veri += "&field2=";
@@ -186,45 +208,47 @@ veri += "&field3=";
 veri += "&field4=";
   veri += String(Energy);  
   veri += "\r\n\r\n"; 
-  esp.print("AT+CIPSEND=");                                  
+  esp.print("AT+CIPSEND=");                                   
   esp.println(veri.length()+2);
   delay(2000);
   if(esp.find(">")){                                         
-    esp.print(veri);                                         
+    esp.print(veri);                                        
     Serial.println(veri);
     Serial.println("Veri gonderildi.");
     delay(1000);
   }
   Serial.println("Baglantı Kapatildi.");
-  esp.println("AT+CIPCLOSE");                               
-  delay(1000);          
+  esp.println("AT+CIPCLOSE");                                
+  delay(1000);                      
 
-/* 5 - LCD Display  */
+
+/* 4 - LCD Display  */
 
       currentMillisLCD = millis();
       if (currentMillisLCD - startMillisLCD >= periodLCD)
           {
-            LCD.setCursor(0,0);                                                                                 
-            LCD.print(Voltage,2);                                                             
+            LCD.setCursor(0,0);                                                                               
+            LCD.print(Voltage,2);                                                           
+            LCD.print("V  ");
             LCD.setCursor(0,1);   
             LCD.print(Power,3);                                                            
             LCD.print("W    ");
-            LCD.setCursor(8,1);                                                                                 
-            LCD.print(Current,5);                                                           
+            LCD.setCursor(8,1);                                                                                   
+            LCD.print(Current,5);                                                             
             LCD.print("A  ");  
             LCD.setCursor(8,0);
-            LCD.print(Energy,3);                                                  
+            LCD.print(Energy,3);                                             
             LCD.print("kWh   ");
-            startMillisLCD = currentMillisLCD ;                                                                   
+            startMillisLCD = currentMillisLCD ;                                                                 
           }
 
-      /* 2 - Data Logger shield */
+      /* 5 - Data Logger shield */
 
       currentMillisSD = millis();
       if (currentMillisSD - startMillisSD >= periodSD)
         {
-          mySensorData=SD.open("Values.txt",FILE_WRITE);                               
-          if(mySensorData)                                                             
+          mySensorData=SD.open("Values.txt",FILE_WRITE);                              
+          if(mySensorData)                                                              
             {
               DateTime now = RTC.now();                                                
               mySensorData.print(now.year(),DEC);
@@ -251,10 +275,10 @@ veri += "&field4=";
              mySensorData.println(wattHour,10);
              mySensorData.print("Energy = "); 
              mySensorData.println(Energy,10);
-             mySensorData.print("--------");       
+             mySensorData.print("--------");      
   
-              Serial.println("written to SD Card !");                                   
-              startMillisSD = currentMillisSD ;                                        
+              mySensorData.close();                                                                                      
+              startMillisSD = currentMillisSD ;                                         
             }
           }
  
