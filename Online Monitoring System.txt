@@ -3,7 +3,7 @@
 #include <SoftwareSerial.h>                                 
                                           
 
-String agAdi = "BOYDAS-AGIR Wifi";                  
+String agAdi = "Berke_Wifi";                  
 String agSifresi = "********";           
 
 int rxPin = A3;                                               
