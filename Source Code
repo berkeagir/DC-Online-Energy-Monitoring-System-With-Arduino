@@ -2,8 +2,7 @@
 
 #include <SoftwareSerial.h>                                 
                                           
-
-String agAdi = "Berke_";                  
+String agAdi = "Berke_Sirat";                  
 String agSifresi = "********";           
 
 int rxPin = A3;                                               
