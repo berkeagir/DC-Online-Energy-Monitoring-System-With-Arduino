@@ -1,5 +1,5 @@
 # Online-Energy-Monitoring-System-With-Arduino
-This code aims to gather energy datas such as current, voltage values as remote and it calculates the energy.
+This code works to gather energy datas such as current, voltage values as remote and it calculates the energy.
 All of these datas are storing into SD card by means of datalogger shield.
 To obtain current values, ACS-712 current sensor is used.
 For calculating Voltage values, 1x47k ohm resistor and 1x2.5k ohm resistor are connected as serial. In that way, DC voltage values are obtained by means of Superposition theorem. 
